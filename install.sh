@@ -51,6 +51,7 @@ function main() {
   reinstall_deno_if_needed
   install_d
   cleanup
+  show_instruction
 }
 
 function install_d() {
@@ -119,6 +120,30 @@ function should_remove_existing_deno() {
 
 function retrieve_deno_version() {
   $CURL "$DOWNLOAD_BASE_URL/default.dvmrc"
+}
+
+function show_instruction() {
+  local d_install_dir
+  if [[ "$D_INSTALL_DIR" == "$HOME/.d" ]]; then
+    d_install_dir="\$HOME/.d"
+  else
+    d_install_dir="$D_INSTALL_DIR"
+  fi
+
+  echo "\`d\` was installed successfully to '$d_install_dir'"
+  echo ""
+  echo "** To 'bash' or 'zsh' users **"
+  echo "Add the following to the end of your ~/.bashrc or ~/.zshrc:"
+  echo ""
+  echo "export D_HOME=\"$d_install_dir\""
+  echo "export PATH=\"\$D_HOME/bin:\$PATH\""
+  echo ""
+  echo "** To 'fish' users **"
+  echo "Execute the following:"
+  echo ""
+  echo "mkdir -p \$HOME/.config/fish/conf.d"
+  echo "echo \"set -gx D_HOME $d_install_dir\" > \$HOME/.config/fish/conf.d/d.fish"
+  echo "fish_add_path \$D_HOME/bin"
 }
 
 main "$@"
