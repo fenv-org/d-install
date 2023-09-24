@@ -15,7 +15,7 @@
 # Environment variables:
 #  D_INSTALL_DIR - directory to install `d` to (default: $HOME/.d)
 
-set -e
+set -euo pipefail
 
 D_INSTALL_DEBUG=${D_INSTALL_DEBUG:-0}
 if [[ "$D_INSTALL_DEBUG" == "1" ]]; then
@@ -24,13 +24,7 @@ fi
 
 # If no arguments provided, install latest version
 if [[ $# -eq 0 ]]; then
-  D_VERSION=$(\
-    git -c 'versionsort.suffix=-' ls-remote \
-      --tags \
-      --sort='v:refname' \
-      git@github.com:fenv-org/d.git \
-    | cut -f2 \
-    | sed 's#refs/tags/##')
+  D_VERSION="latest"
 else
   D_VERSION="$1"
 fi
@@ -41,22 +35,28 @@ export DENO_INSTALL="$D_INSTALL_DIR/deno"
 export DENO_DIR="$DENO_INSTALL"
 
 DENO="$DENO_DIR/bin/deno"
+CURL="curl -fsSL"
+
 D_HOME="$D_INSTALL_DIR"
 D_BIN="$D_HOME/bin"
-RAW_CODE_BASE_URL="https://raw.githubusercontent.com/fenv-org/d/$D_VERSION"
+RELEASE_BASE_URL="https://github.com/fenv-org/d/releases"
 DENO_INSTALLER="https://gist.githubusercontent.com/LukeChannings/09d53f5c364391042186518c8598b85e/raw/ac8cd8c675b985edd4b3e16df63ffef14d1f0e24/deno_install.sh"
+if [[ "$D_VERSION" == "latest" ]]; then
+  DOWNLOAD_BASE_URL="$RELEASE_BASE_URL/latest/download"
+else
+  DOWNLOAD_BASE_URL="$RELEASE_BASE_URL/download/$D_VERSION"
+fi
 
 function main() {
   reinstall_deno_if_needed
   install_d
+  cleanup
 }
 
 function install_d() {
   echo "Installing d version: '$D_VERSION' to: '$D_INSTALL_DIR'"
   mkdir -p "$D_BIN"
-  bundle_script \
-    "$RAW_CODE_BASE_URL/driver/main.ts" \
-    "$D_BIN/main.js"
+  $CURL --output "$D_BIN/main.js" "$DOWNLOAD_BASE_URL/main.js"
   $DENO compile \
     --allow-all \
     --allow-read \
@@ -67,7 +67,11 @@ function install_d() {
     --no-prompt \
     --output "$D_BIN/d" \
     "$D_BIN/main.js"
-  rm "$D_BIN/main.js"
+}
+
+function cleanup() {
+  rm -rf "$DENO_INSTALL"
+  rm -f "$D_BIN/main.js"
 }
 
 function reinstall_deno_if_needed() {
@@ -79,10 +83,7 @@ function reinstall_deno_if_needed() {
   fi
 
   if [[ ! -d "$DENO_INSTALL" ]]; then
-    echo "Installing deno at: $DENO_INSTALL"
-    curl -fsSL "$DENO_INSTALLER" \
-      | sh -s "v$deno_version" \
-      > /dev/null
+    $CURL "$DENO_INSTALLER" | sh -s "v$deno_version" > /dev/null
     echo "$deno_version" > "$DENO_INSTALL/deno_version"
   fi
 }
@@ -117,47 +118,7 @@ function should_remove_existing_deno() {
 }
 
 function retrieve_deno_version() {
-  local url="$RAW_CODE_BASE_URL/lib/version/src/deno_version.ts"
-  
-  # The content of the file looks like:
-  # export const DENO_VERSION = '1.37.0'
-  #
-  # Extracts "1.37.0" from the file.
-  curl -sSL "$url" \
-  | sed -n "s/.*'\([^']*\)'.*/\1/p"
-}
-
-function bundle_script() {
-  echo "
-import { bundle } from 'https://deno.land/x/emit/mod.ts'
-import * as fs from 'https://deno.land/std/fs/mod.ts'
-import * as path from 'https://deno.land/std/path/mod.ts'
-
-const _path = '$1'.startsWith('http')
-  ? '$1'
-  : path.resolve('$1')
-const { code, map } = await bundle(
-  new URL(_path, import.meta.url)
-)
-
-if ('$2') {
-  fs.ensureDirSync(path.dirname(path.resolve('$2')))
-  Deno.writeTextFileSync('$2', \`// deno-fmt-ignore-file
-// deno-lint-ignore-file
-// This code was bundled using 'deno_emit' and 
-// it's not recommended to edit it manually
-
-\` + code)
-} else {
-  console.log(code)
-}
-" | \
-  $DENO run \
-    --allow-read \
-    --allow-write \
-    --allow-net \
-    --allow-env=DENO_DIR,HOME,DENO_AUTH_TOKENS \
-    -
+  $CURL "$DOWNLOAD_BASE_URL/default.dvmrc"
 }
 
 main "$@"
