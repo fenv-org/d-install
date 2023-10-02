@@ -14,6 +14,7 @@
 #
 # Environment variables:
 #  D_INSTALL_DIR - directory to install `d` to (default: $HOME/.d)
+#  D_CLI         - name of the CLI (default: d)
 
 set -euo pipefail
 
