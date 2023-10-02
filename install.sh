@@ -56,7 +56,17 @@ function main() {
 }
 
 function install_d() {
-  echo "Installing d version: '$D_VERSION' to: '$D_INSTALL_DIR'"
+  if [[ "$D_CLI" != "d" ]]; then
+    (
+      echo "CAUTION:"
+      echo "D_CLI is set to '$D_CLI'."
+      echo "so '$D_CLI' will be installed instead of 'd'."
+      echo "If you want to install 'd', please unset D_CLI."
+      echo ""
+    ) >&2 
+  fi
+
+  echo "Installing '$D_CLI' version: '$D_VERSION' to: '$D_INSTALL_DIR'"
   mkdir -p "$D_BIN"
   $CURL --output "$D_BIN/main.js" "$DOWNLOAD_BASE_URL/main.js"
   rm -f "$D_BIN/d"
