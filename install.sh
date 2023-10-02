@@ -39,6 +39,7 @@ CURL="curl -fsSL"
 
 D_HOME="$D_INSTALL_DIR"
 D_BIN="$D_HOME/bin"
+D_CLI=${D_CLI:-d}
 RELEASE_BASE_URL="https://github.com/fenv-org/d/releases"
 DENO_INSTALLER="https://gist.githubusercontent.com/LukeChannings/09d53f5c364391042186518c8598b85e/raw/ac8cd8c675b985edd4b3e16df63ffef14d1f0e24/deno_install.sh"
 if [[ "$D_VERSION" == "latest" ]]; then
@@ -55,8 +56,19 @@ function main() {
 }
 
 function install_d() {
-  echo "Installing d version: '$D_VERSION' to: '$D_INSTALL_DIR'"
+  if [[ "$D_CLI" != "d" ]]; then
+    (
+      echo "CAUTION:"
+      echo "D_CLI is set to '$D_CLI'."
+      echo "so '$D_CLI' will be installed instead of 'd'."
+      echo "If you want to install 'd', please unset D_CLI."
+      echo ""
+    ) >&2 
+  fi
+
+  echo "Installing '$D_CLI' version: '$D_VERSION' to: '$D_INSTALL_DIR'"
   mkdir -p "$D_BIN"
+  rm -f "$D_BIN"/*
   $CURL --output "$D_BIN/main.js" "$DOWNLOAD_BASE_URL/main.js"
   $DENO compile \
     --allow-all \
@@ -66,7 +78,7 @@ function install_d() {
     --allow-net \
     --allow-run \
     --no-prompt \
-    --output "$D_BIN/d" \
+    --output "$D_BIN/$D_CLI" \
     "$D_BIN/main.js"
 }
 
