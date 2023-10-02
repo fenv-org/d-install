@@ -68,9 +68,8 @@ function install_d() {
 
   echo "Installing '$D_CLI' version: '$D_VERSION' to: '$D_INSTALL_DIR'"
   mkdir -p "$D_BIN"
+  rm -f "$D_BIN"/*
   $CURL --output "$D_BIN/main.js" "$DOWNLOAD_BASE_URL/main.js"
-  rm -f "$D_BIN/d"
-  rm -f "$D_BIN/$D_CLI"
   $DENO compile \
     --allow-all \
     --allow-read \
