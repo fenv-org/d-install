@@ -155,8 +155,8 @@ function show_instruction() {
   echo "Execute the following:"
   echo ""
   echo "mkdir -p \$HOME/.config/fish/conf.d"
-  echo "echo \"set -gx D_HOME $d_install_dir\" > \$HOME/.config/fish/conf.d/d.fish"
-  echo "fish_add_path \$D_HOME/bin"
+  echo "echo 'set -gx D_HOME $d_install_dir' > \$HOME/.config/fish/conf.d/d.fish"
+  echo "echo 'fish_add_path \$D_HOME/bin' >> \$HOME/.config/fish/conf.d/d.fish"
 }
 
 main "$@"
